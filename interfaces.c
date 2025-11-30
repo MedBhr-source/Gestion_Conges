@@ -4,6 +4,8 @@
 #include"interfaces.h"
 #include"structs.h"
 
+// Déclaration de la fonction pause_screen (prototype)
+void pause_screen();
 
 void afficherMenuPrincipal(){
     printf("\tBIENVENUE\n");
@@ -24,7 +26,6 @@ void afficherMenuEmploye(){
     printf("4. Se deconnecter");
     printf("\n--------------------------\n");
     printf("Entrez votre choix:\n");
-
 }
 
 void afficherMenuManager(){
@@ -57,6 +58,19 @@ extern int nbEmployes;
 extern int nbConges;
 extern int nbSoldes;
 
+
+// Fonction pour mettre en pause et attendre que l'utilisateur appuie sur ENTRER
+void pause_screen(){
+    int c;
+    // Vider le buffer d'entrée d'abord
+    while ((c = getchar()) != '\n' && c != EOF);
+    
+    printf("\nAppuyez sur ENTRER pour continuer...");
+    fflush(stdout);
+    
+    // Attendre l'ENTRER
+    while ((c = getchar()) != '\n' && c != EOF);
+}
 
 // Fonction utilitaire pour convertir le type de congé en texte lisible
 const char* getTypeCongeString(int type) {
@@ -93,6 +107,7 @@ void afficherSoldeUtilisateur(int idUtilisateur) {
     }
     
     printf("------------------------------------\n");
+    pause_screen();
 }
 
 // logic.c
@@ -166,44 +181,259 @@ void faireDemandeConge(int idUtilisateur) {
     printf("\nDemande créée avec succès ! ID de votre demande : %d\n", nouvelleDemande.id);
     printf("Elle a été sauvegardée et est maintenant en attente de validation par votre manager.\n");
     printf("----------------------------------\n");
+    pause_screen();
 }
 
 void voirHistoriqueDemandes(int idUtilisateur){
     printf("\n\t=== HISTORIQUE DES DEMANDES ===\n");
     printf("--------------------------\n");
     
+    FILE *fichier = fopen("conges.txt", "r");
+    if (fichier == NULL) {
+        printf("Erreur : Impossible d'ouvrir le fichier conges.txt\n");
+        return;
+    }
+    
+    char ligne[512];
     int trouveDemande = 0;
-    for(int i = 0; i < nbConges; i++){
-        if(conges[i].idEmploye == idUtilisateur){
-            printf("\nDemande #%d:\n", conges[i].id);
+    
+    // Lire le fichier ligne par ligne
+    while (fgets(ligne, sizeof(ligne), fichier)) {
+        if (ligne[0] == '\n' || ligne[0] == '\0') continue;
+        
+        int id, idEmploye, type, status;
+        int jourDebut, moisDebut, anneeDebut;
+        int jourFin, moisFin, anneeFin;
+        char motif[256];
+        
+        // Parser la ligne avec sscanf selon le format du fichier
+        int resultat = sscanf(ligne, "%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;\"%255[^\"]\"",
+                   &id, &idEmploye,
+                   &jourDebut, &moisDebut, &anneeDebut,
+                   &jourFin, &moisFin, &anneeFin,
+                   &type, &status,
+                   motif);
+        
+        if (resultat == 11 && idEmploye == idUtilisateur) {
+            printf("\nDemande #%d:\n", id);
             printf("  Du: %02d/%02d/%04d au %02d/%02d/%04d\n", 
-                   conges[i].dateDebut.jour, conges[i].dateDebut.mois, conges[i].dateDebut.annee,
-                   conges[i].dateFin.jour, conges[i].dateFin.mois, conges[i].dateFin.annee);
-            printf("  Type: %s\n", conges[i].type == 0 ? "Annuel" : "Maladie");
+                   jourDebut, moisDebut, anneeDebut,
+                   jourFin, moisFin, anneeFin);
+            printf("  Type: %s\n", type == 0 ? "Annuel" : "Maladie");
             printf("  Statut: %s\n", 
-                   conges[i].status == 0 ? "En attente" : (conges[i].status == 1 ? "Approuvé" : "Rejeté"));
-            printf("  Motif: %s\n", conges[i].motif);
+                   status == 0 ? "En attente" : (status == 1 ? "Approuvé" : "Rejeté"));
+            printf("  Motif: %s\n", motif);
             trouveDemande = 1;
         }
     }
+    
+    fclose(fichier);
     
     if(!trouveDemande){
         printf("Aucune demande de congé trouvée pour cet utilisateur.\n");
     }
     printf("--------------------------\n\n");
+    pause_screen();
 }
 
 // Fonctions Manager
 void listerDemandesEnAttente(int idUtilisateur){
-    printf("Demandes en attente pour le manager %d\n", idUtilisateur);
+    printf("\n\t=== DEMANDES EN ATTENTE ===\n");
+    printf("--------------------------\n");
+    
+    FILE *fichier = fopen("conges.txt", "r");
+    if (fichier == NULL) {
+        printf("Erreur : Impossible d'ouvrir le fichier conges.txt\n");
+        return;
+    }
+    
+    char ligne[512];
+    int trouveDemande = 0;
+    
+    // Lire le fichier ligne par ligne
+    while (fgets(ligne, sizeof(ligne), fichier)) {
+        if (ligne[0] == '\n' || ligne[0] == '\0') continue;
+        
+        int id, idEmploye, type, status;
+        int jourDebut, moisDebut, anneeDebut;
+        int jourFin, moisFin, anneeFin;
+        char motif[256];
+        
+        // Parser la ligne avec sscanf selon le format du fichier
+        int resultat = sscanf(ligne, "%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;\"%255[^\"]\"",
+                   &id, &idEmploye,
+                   &jourDebut, &moisDebut, &anneeDebut,
+                   &jourFin, &moisFin, &anneeFin,
+                   &type, &status,
+                   motif);
+        
+        // Afficher uniquement les demandes EN ATTENTE (status == 0)
+        if (resultat == 11 && status == 0) {
+            printf("\nDemande #%d:\n", id);
+            printf("  Employe ID: %d\n", idEmploye);
+            printf("  Du: %02d/%02d/%04d au %02d/%02d/%04d\n", 
+                   jourDebut, moisDebut, anneeDebut,
+                   jourFin, moisFin, anneeFin);
+            printf("  Type: %s\n", type == 0 ? "Annuel" : "Maladie");
+            printf("  Motif: %s\n", motif);
+            trouveDemande = 1;
+        }
+    }
+    
+    fclose(fichier);
+    
+    if(!trouveDemande){
+        printf("Aucune demande en attente.\n");
+    }
+    printf("--------------------------\n");
+    pause_screen();
 }
 
 void approuverDemande(){
-    printf("Approbation de demande\n");
+    printf("\n--- Approuver une Demande ---\n");
+    
+    int idDemande;
+    printf("Entrez l'ID de la demande à approuver: ");
+    scanf("%d", &idDemande);
+    
+    FILE *fichier = fopen("conges.txt", "r");
+    if (fichier == NULL) {
+        printf("Erreur : Impossible d'ouvrir le fichier conges.txt\n");
+        return;
+    }
+    
+    FILE *fichierTemp = fopen("conges_temp.txt", "w");
+    if (fichierTemp == NULL) {
+        printf("Erreur : Impossible de créer le fichier temporaire\n");
+        fclose(fichier);
+        return;
+    }
+    
+    char ligne[512];
+    int trouve = 0;
+    
+    // Lire et réécrire le fichier
+    while (fgets(ligne, sizeof(ligne), fichier)) {
+        if (ligne[0] == '\n' || ligne[0] == '\0') continue;
+        
+        int id;
+        sscanf(ligne, "%d;", &id);
+        
+        if (id == idDemande) {
+            // Remplacer le status (position 9) par 1 (approuvé)
+            // Réinsérer la ligne avec le nouveau statut
+            int idEmploye, type, status;
+            int jourDebut, moisDebut, anneeDebut;
+            int jourFin, moisFin, anneeFin;
+            char motif[256];
+            
+            int resultat = sscanf(ligne, "%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;\"%255[^\"]\"",
+                       &id, &idEmploye,
+                       &jourDebut, &moisDebut, &anneeDebut,
+                       &jourFin, &moisFin, &anneeFin,
+                       &type, &status,
+                       motif);
+            
+            if (resultat == 11) {
+                fprintf(fichierTemp, "%d;%d;%02d;%02d;%d;%02d;%02d;%d;%d;%d;\"%s\"\n",
+                        id, idEmploye,
+                        jourDebut, moisDebut, anneeDebut,
+                        jourFin, moisFin, anneeFin,
+                        type, 1, motif); // 1 = Approuvé
+                printf("Demande #%d approuvée avec succès!\n", idDemande);
+                trouve = 1;
+            }
+        } else {
+            fputs(ligne, fichierTemp);
+        }
+    }
+    
+    fclose(fichier);
+    fclose(fichierTemp);
+    
+    if (trouve) {
+        remove("conges.txt");
+        rename("conges_temp.txt", "conges.txt");
+    } else {
+        remove("conges_temp.txt");
+        printf("Demande #%d introuvable ou déjà traitée.\n", idDemande);
+    }
+    
+    printf("----------------------------------\n");
+    pause_screen();
 }
 
 void rejeterDemande(){
-    printf("Rejet de demande\n");
+    printf("\n--- Rejeter une Demande ---\n");
+    
+    int idDemande;
+    printf("Entrez l'ID de la demande à rejeter: ");
+    scanf("%d", &idDemande);
+    
+    FILE *fichier = fopen("conges.txt", "r");
+    if (fichier == NULL) {
+        printf("Erreur : Impossible d'ouvrir le fichier conges.txt\n");
+        return;
+    }
+    
+    FILE *fichierTemp = fopen("conges_temp.txt", "w");
+    if (fichierTemp == NULL) {
+        printf("Erreur : Impossible de créer le fichier temporaire\n");
+        fclose(fichier);
+        return;
+    }
+    
+    char ligne[512];
+    int trouve = 0;
+    
+    // Lire et réécrire le fichier
+    while (fgets(ligne, sizeof(ligne), fichier)) {
+        if (ligne[0] == '\n' || ligne[0] == '\0') continue;
+        
+        int id;
+        sscanf(ligne, "%d;", &id);
+        
+        if (id == idDemande) {
+            // Remplacer le status (position 9) par 2 (rejeté)
+            int idEmploye, type, status;
+            int jourDebut, moisDebut, anneeDebut;
+            int jourFin, moisFin, anneeFin;
+            char motif[256];
+            
+            int resultat = sscanf(ligne, "%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;\"%255[^\"]\"",
+                       &id, &idEmploye,
+                       &jourDebut, &moisDebut, &anneeDebut,
+                       &jourFin, &moisFin, &anneeFin,
+                       &type, &status,
+                       motif);
+            
+            if (resultat == 11) {
+                fprintf(fichierTemp, "%d;%d;%02d;%02d;%d;%02d;%02d;%d;%d;%d;\"%s\"\n",
+                        id, idEmploye,
+                        jourDebut, moisDebut, anneeDebut,
+                        jourFin, moisFin, anneeFin,
+                        type, 2, motif); // 2 = Rejeté
+                printf("Demande #%d rejetée avec succès!\n", idDemande);
+                trouve = 1;
+            }
+        } else {
+            fputs(ligne, fichierTemp);
+        }
+    }
+    
+    fclose(fichier);
+    fclose(fichierTemp);
+    
+    if (trouve) {
+        remove("conges.txt");
+        rename("conges_temp.txt", "conges.txt");
+    } else {
+        remove("conges_temp.txt");
+        printf("Demande #%d introuvable ou déjà traitée.\n", idDemande);
+    }
+    
+    printf("----------------------------------\n");
+    pause_screen();
 }
 
 // Fonctions Admin
