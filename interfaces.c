@@ -9,7 +9,7 @@ void pause_screen();
 
 void afficherMenuPrincipal(){
     printf("\tBIENVENUE\n");
-    printf("--Menu Principal--87\n");
+    printf("--Menu Principal--\n");
     printf("\n--------------------------\n");
     printf("1. Se connecter\n");
     printf("2. Quitter");
@@ -34,7 +34,7 @@ void afficherMenuManager(){
     printf("1. Voir les demandes en attente\n");
     printf("2. Approuver une demande \n");
     printf("3. Rejeter une demande   \n");
-    printf("4. Se déconnecter\n");
+    printf("4. Se deconnecter\n");
     printf("\n--------------------------\n");
     printf("Entrez votre choix:\n");
 }
@@ -42,10 +42,11 @@ void afficherMenuManager(){
 void afficherMenuAdmin(){
     printf("\t--Menu Admin--\n");
     printf("\n--------------------------\n");
-    printf("1. Gérer les employés \n");
+    printf("1. Gerer les employes \n");
     printf("2. Voir toutes les demandes de conge\n");
-    printf("3. Mettre à jour les soldes de congés\n");
-    printf("4. Se deconnecter\n");
+    printf("3. Mettre a jour les soldes de conges\n");
+    printf("4. statistiques des conges\n");
+    printf("5. Se deconnecter\n");
     printf("\n--------------------------\n");
     printf("Entrez votre choix:\n");
 }
@@ -70,6 +71,9 @@ void pause_screen(){
     
     // Attendre l'ENTRER
     while ((c = getchar()) != '\n' && c != EOF);
+    
+    // Effacer l'écran après avoir appuyé sur ENTRER
+    system("cls");
 }
 
 // Fonction utilitaire pour convertir le type de congé en texte lisible
@@ -83,7 +87,8 @@ const char* getTypeCongeString(int type) {
 
 // La fonction principale pour afficher le solde
 void afficherSoldeUtilisateur(int idUtilisateur) {
-    printf("\n--- Votre Solde de Congés (ID: %d) ---\n", idUtilisateur);
+    system("cls");
+    printf("\n--- Votre Solde de Conges (ID: %d) ---\n", idUtilisateur);
     
     int trouve = 0; // Un drapeau pour savoir si on a trouvé au moins un solde
 
@@ -103,7 +108,7 @@ void afficherSoldeUtilisateur(int idUtilisateur) {
 
     // Si après avoir tout parcouru, le drapeau n'a pas été levé...
     if (!trouve) {
-        printf("Aucun solde de congé trouvé pour votre profil.\n");
+        printf("Aucun solde de conge trouve pour votre profil.\\n");
     }
     
     printf("------------------------------------\n");
@@ -128,7 +133,8 @@ int getMaxCongeId() {
 }
 
 void faireDemandeConge(int idUtilisateur) {
-    printf("\n--- Nouvelle Demande de Congé ---\n");
+    system("cls");
+    printf("\n--- Nouvelle Demande de Conge ---\n");
 
     // 1. Création de la nouvelle demande en mémoire
     Conge nouvelleDemande;
@@ -136,10 +142,10 @@ void faireDemandeConge(int idUtilisateur) {
     nouvelleDemande.idEmploye = idUtilisateur;
     nouvelleDemande.status = 0; // Le statut est 'en attente' (0)
 
-    printf("Type de congé (0: Annuel, 1: Maladie) : ");
+    printf("Type de conge (0: Annuel, 1: Maladie) : ");
     scanf("%d", &nouvelleDemande.type);
 
-    printf("Date de début (JJ MM AAAA) : ");
+    printf("Date de debut (JJ MM AAAA) : ");
     scanf("%d %d %d", &nouvelleDemande.dateDebut.jour, &nouvelleDemande.dateDebut.mois, &nouvelleDemande.dateDebut.annee);
 
     printf("Date de fin (JJ MM AAAA) : ");
@@ -152,7 +158,7 @@ void faireDemandeConge(int idUtilisateur) {
     // On utilise realloc pour agrandir dynamiquement le tableau
     Conge *temp = realloc(conges, (nbConges + 1) * sizeof(Conge));
     if (temp == NULL) {
-        printf("Erreur : Impossible d'ajouter la demande (mémoire pleine).\n");
+        printf("Erreur : Impossible d'ajouter la demande (memoire pleine).\n");
         return;
     }
     conges = temp;
@@ -178,13 +184,14 @@ void faireDemandeConge(int idUtilisateur) {
 
     fclose(fichier); // Indispensable pour valider l'écriture
 
-    printf("\nDemande créée avec succès ! ID de votre demande : %d\n", nouvelleDemande.id);
-    printf("Elle a été sauvegardée et est maintenant en attente de validation par votre manager.\n");
+    printf("\nDemande creee avec succes ! ID de votre demande : %d\n", nouvelleDemande.id);
+    printf("Elle a ete sauvegardee et est maintenant en attente de validation par votre manager.\n");
     printf("----------------------------------\n");
     pause_screen();
 }
 
 void voirHistoriqueDemandes(int idUtilisateur){
+    system("cls");
     printf("\n\t=== HISTORIQUE DES DEMANDES ===\n");
     printf("--------------------------\n");
     
@@ -197,32 +204,37 @@ void voirHistoriqueDemandes(int idUtilisateur){
     char ligne[512];
     int trouveDemande = 0;
     
-    // Lire le fichier ligne par ligne
     while (fgets(ligne, sizeof(ligne), fichier)) {
         if (ligne[0] == '\n' || ligne[0] == '\0') continue;
         
+        // Supprimer le \n
+        ligne[strcspn(ligne, "\n")] = 0;
+        
         int id, idEmploye, type, status;
-        int jourDebut, moisDebut, anneeDebut;
-        int jourFin, moisFin, anneeFin;
-        char motif[256];
+        int jourDebut, moisDebut, anneeDebut, jourFin, moisFin, anneeFin;
         
-        // Parser la ligne avec sscanf selon le format du fichier
-        int resultat = sscanf(ligne, "%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;\"%255[^\"]\"",
-                   &id, &idEmploye,
-                   &jourDebut, &moisDebut, &anneeDebut,
-                   &jourFin, &moisFin, &anneeFin,
-                   &type, &status,
-                   motif);
+        // Parser jusqu'au motif
+        int n = sscanf(ligne, "%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;",
+                   &id, &idEmploye, &jourDebut, &moisDebut, &anneeDebut,
+                   &jourFin, &moisFin, &anneeFin, &type, &status);
         
-        if (resultat == 11 && idEmploye == idUtilisateur) {
+        if (n == 10 && idEmploye == idUtilisateur) {
+            // Extraire motif entre guillemets
+            char *start = strchr(ligne, '"');
+            char *end = start ? strchr(start + 1, '"') : NULL;
+            char motif[256] = {0};
+            
+            if (start && end) {
+                strncpy(motif, start + 1, end - start - 1);
+            }
+            
             printf("\nDemande #%d:\n", id);
             printf("  Du: %02d/%02d/%04d au %02d/%02d/%04d\n", 
-                   jourDebut, moisDebut, anneeDebut,
-                   jourFin, moisFin, anneeFin);
-            printf("  Type: %s\n", type == 0 ? "Annuel" : "Maladie");
-            printf("  Statut: %s\n", 
-                   status == 0 ? "En attente" : (status == 1 ? "Approuvé" : "Rejeté"));
-            printf("  Motif: %s\n", motif);
+                   jourDebut, moisDebut, anneeDebut, jourFin, moisFin, anneeFin);
+            printf("  Type: %s\\n", type == 0 ? "Annuel" : "Maladie");
+            printf("  Statut: %s\\n", 
+                   status == 0 ? "En attente" : (status == 1 ? "Approuve" : "Rejete"));
+            printf("  Motif: %s\\n", motif);
             trouveDemande = 1;
         }
     }
@@ -230,7 +242,7 @@ void voirHistoriqueDemandes(int idUtilisateur){
     fclose(fichier);
     
     if(!trouveDemande){
-        printf("Aucune demande de congé trouvée pour cet utilisateur.\n");
+        printf("Aucune demande de conge trouvee pour cet utilisateur.\n");
     }
     printf("--------------------------\n\n");
     pause_screen();
@@ -238,6 +250,7 @@ void voirHistoriqueDemandes(int idUtilisateur){
 
 // Fonctions Manager
 void listerDemandesEnAttente(int idUtilisateur){
+    system("cls");
     printf("\n\t=== DEMANDES EN ATTENTE ===\n");
     printf("--------------------------\n");
     
@@ -250,30 +263,34 @@ void listerDemandesEnAttente(int idUtilisateur){
     char ligne[512];
     int trouveDemande = 0;
     
-    // Lire le fichier ligne par ligne
     while (fgets(ligne, sizeof(ligne), fichier)) {
         if (ligne[0] == '\n' || ligne[0] == '\0') continue;
         
+        // Supprimer le \n
+        ligne[strcspn(ligne, "\n")] = 0;
+        
         int id, idEmploye, type, status;
-        int jourDebut, moisDebut, anneeDebut;
-        int jourFin, moisFin, anneeFin;
-        char motif[256];
+        int jourDebut, moisDebut, anneeDebut, jourFin, moisFin, anneeFin;
         
-        // Parser la ligne avec sscanf selon le format du fichier
-        int resultat = sscanf(ligne, "%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;\"%255[^\"]\"",
-                   &id, &idEmploye,
-                   &jourDebut, &moisDebut, &anneeDebut,
-                   &jourFin, &moisFin, &anneeFin,
-                   &type, &status,
-                   motif);
+        // Parser jusqu'au motif
+        int n = sscanf(ligne, "%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;",
+                   &id, &idEmploye, &jourDebut, &moisDebut, &anneeDebut,
+                   &jourFin, &moisFin, &anneeFin, &type, &status);
         
-        // Afficher uniquement les demandes EN ATTENTE (status == 0)
-        if (resultat == 11 && status == 0) {
+        if (n == 10 && status == 0) {
+            // Extraire motif entre guillemets
+            char *start = strchr(ligne, '"');
+            char *end = start ? strchr(start + 1, '"') : NULL;
+            char motif[256] = {0};
+            
+            if (start && end) {
+                strncpy(motif, start + 1, end - start - 1);
+            }
+            
             printf("\nDemande #%d:\n", id);
             printf("  Employe ID: %d\n", idEmploye);
             printf("  Du: %02d/%02d/%04d au %02d/%02d/%04d\n", 
-                   jourDebut, moisDebut, anneeDebut,
-                   jourFin, moisFin, anneeFin);
+                   jourDebut, moisDebut, anneeDebut, jourFin, moisFin, anneeFin);
             printf("  Type: %s\n", type == 0 ? "Annuel" : "Maladie");
             printf("  Motif: %s\n", motif);
             trouveDemande = 1;
@@ -290,10 +307,11 @@ void listerDemandesEnAttente(int idUtilisateur){
 }
 
 void approuverDemande(){
+    system("cls");
     printf("\n--- Approuver une Demande ---\n");
     
     int idDemande;
-    printf("Entrez l'ID de la demande à approuver: ");
+    printf("Entrez l'ID de la demande a approuver: ");
     scanf("%d", &idDemande);
     
     FILE *fichier = fopen("conges.txt", "r");
@@ -340,7 +358,7 @@ void approuverDemande(){
                         jourDebut, moisDebut, anneeDebut,
                         jourFin, moisFin, anneeFin,
                         type, 1, motif); // 1 = Approuvé
-                printf("Demande #%d approuvée avec succès!\n", idDemande);
+                printf("Demande #%d approuvee avec succes!\n", idDemande);
                 trouve = 1;
             }
         } else {
@@ -356,7 +374,7 @@ void approuverDemande(){
         rename("conges_temp.txt", "conges.txt");
     } else {
         remove("conges_temp.txt");
-        printf("Demande #%d introuvable ou déjà traitée.\n", idDemande);
+        printf("Demande #%d introuvable ou deja traitee.\\n", idDemande);
     }
     
     printf("----------------------------------\n");
@@ -364,10 +382,11 @@ void approuverDemande(){
 }
 
 void rejeterDemande(){
+    system("cls");
     printf("\n--- Rejeter une Demande ---\n");
     
     int idDemande;
-    printf("Entrez l'ID de la demande à rejeter: ");
+    printf("Entrez l'ID de la demande a rejeter: ");
     scanf("%d", &idDemande);
     
     FILE *fichier = fopen("conges.txt", "r");
@@ -413,7 +432,7 @@ void rejeterDemande(){
                         jourDebut, moisDebut, anneeDebut,
                         jourFin, moisFin, anneeFin,
                         type, 2, motif); // 2 = Rejeté
-                printf("Demande #%d rejetée avec succès!\n", idDemande);
+                printf("Demande #%d rejetee avec succes!\n", idDemande);
                 trouve = 1;
             }
         } else {
@@ -429,7 +448,7 @@ void rejeterDemande(){
         rename("conges_temp.txt", "conges.txt");
     } else {
         remove("conges_temp.txt");
-        printf("Demande #%d introuvable ou déjà traitée.\n", idDemande);
+        printf("Demande #%d introuvable ou deja traitee.\n", idDemande);
     }
     
     printf("----------------------------------\n");
@@ -438,13 +457,267 @@ void rejeterDemande(){
 
 // Fonctions Admin
 void gererEmployes(){
-    printf("Gestion des employés\n");
+    system("cls");
+    printf("\n--- Gestion des Employes ---\n");
+    printf("1. Ajouter un employe\n");
+    printf("2. Modifier un employe\n");
+    printf("3. Supprimer un employe\n");
+    printf("4. Lister tous les employes\n");
+    printf("5. Retour au menu\n");
+    printf("Choisir une option: ");
+    
+    int choix;
+    scanf("%d", &choix);
+    
+    switch(choix) {
+        case 1: {
+            // AJOUTER UN EMPLOYÉ
+            printf("\n--- Ajouter un Employe ---\n");
+            
+            int maxId = 0;
+            for(int i = 0; i < nbEmployes; i++) {
+                if(employes[i].ID > maxId) maxId = employes[i].ID;
+            }
+            
+            Employe nouvelEmploye;
+            nouvelEmploye.ID = maxId + 1;
+            
+            printf("Nom: ");
+            scanf("%14s", nouvelEmploye.nom);
+            
+            printf("Prenom: ");
+            scanf("%14s", nouvelEmploye.prenom);
+            
+            printf("Email: ");
+            scanf("%29s", nouvelEmploye.email);
+            
+            printf("Departement: ");
+            scanf("%14s", nouvelEmploye.Departement);
+            
+            printf("Role (0: Employe, 1: Manager, 2: Admin): ");
+            scanf("%d", &nouvelEmploye.Role);
+            
+            // Ajouter à la mémoire
+            Employe *temp = realloc(employes, (nbEmployes + 1) * sizeof(Employe));
+            if (temp == NULL) {
+                printf("Erreur : Allocation memoire echouee\n");
+                break;
+            }
+            employes = temp;
+            employes[nbEmployes] = nouvelEmploye;
+            nbEmployes++;
+            
+            // Sauvegarder dans le fichier
+            FILE *fichier = fopen("employes.txt", "a");
+            if (fichier == NULL) {
+                printf("Erreur : Impossible d'ouvrir employes.txt\n");
+                break;
+            }
+            
+            fprintf(fichier, "\n%d;%s;%s;%s;%s;%d\n",
+                    nouvelEmploye.ID, nouvelEmploye.nom, nouvelEmploye.prenom,
+                    nouvelEmploye.email, nouvelEmploye.Departement, nouvelEmploye.Role);
+            fclose(fichier);
+            
+            printf("Employe #%d ajoute avec succes!\n", nouvelEmploye.ID);
+            break;
+        }
+        case 3: {
+            // SUPPRIMER UN EMPLOYÉ
+            printf("\n--- Supprimer un Employe ---\n");
+            
+            int idSupprimer;
+            printf("Entrez l'ID de l'employe a supprimer: ");
+            scanf("%d", &idSupprimer);
+            
+            FILE *fichier = fopen("employes.txt", "r");
+            if (fichier == NULL) {
+                printf("Erreur : Impossible d'ouvrir employes.txt\n");
+                break;
+            }
+            
+            FILE *fichierTemp = fopen("employes_temp.txt", "w");
+            if (fichierTemp == NULL) {
+                printf("Erreur : Impossible de créer le fichier temporaire\n");
+                fclose(fichier);
+                break;
+            }
+            
+            char ligne[256];
+            int trouve = 0;
+            
+            while (fgets(ligne, sizeof(ligne), fichier)) {
+                if (ligne[0] == '\n' || ligne[0] == '\0') continue;
+                
+                int id;
+                sscanf(ligne, "%d;", &id);
+                
+                if (id == idSupprimer) {
+                    trouve = 1;
+                    printf("Employe #%d supprime!\n", idSupprimer);
+                } else {
+                    fputs(ligne, fichierTemp);
+                }
+            }
+            
+            fclose(fichier);
+            fclose(fichierTemp);
+            
+            if (trouve) {
+                remove("employes.txt");
+                rename("employes_temp.txt", "employes.txt");
+                
+                // Retirer de la mémoire
+                for(int i = 0; i < nbEmployes; i++) {
+                    if(employes[i].ID == idSupprimer) {
+                        for(int j = i; j < nbEmployes - 1; j++) {
+                            employes[j] = employes[j + 1];
+                        }
+                        nbEmployes--;
+                        break;
+                    }
+                }
+            } else {
+                remove("employes_temp.txt");
+                printf("Employe #%d introuvable.\n", idSupprimer);
+            }
+            break;
+        }
+        case 4: {
+            printf("\n=== LISTE DES EMPLOYES ===\n");
+            for(int i = 0; i < nbEmployes; i++) {
+                printf("\nID: %d\n", employes[i].ID);
+                printf("  Nom: %s %s\n", employes[i].nom, employes[i].prenom);
+                printf("  Email: %s\n", employes[i].email);
+                printf("  Departement: %s\n", employes[i].Departement);
+                printf("  Role: %s\n", employes[i].Role == 0 ? "Employe" : (employes[i].Role == 1 ? "Manager" : "Admin"));
+            }
+            printf("=========================\n");
+            break;
+        }
+        case 5:
+            return;
+        default:
+            printf("Option invalide\n");
+    }
+    pause_screen();
 }
 
 void voirToutesLesDemandes(){
-    printf("Affichage de toutes les demandes\n");
+    system("cls");
+    printf("\n\t=== TOUTES LES DEMANDES DE CONGE ===\n");
+    printf("--------------------------\n");
+    
+    FILE *fichier = fopen("conges.txt", "r");
+    if (fichier == NULL) {
+        printf("Erreur : Impossible d'ouvrir le fichier conges.txt\n");
+        return;
+    }
+    
+    char ligne[512];
+    int trouve = 0;
+    
+    while (fgets(ligne, sizeof(ligne), fichier)) {
+        if (ligne[0] == '\n' || ligne[0] == '\0') continue;
+        
+        // Supprimer le \n
+        ligne[strcspn(ligne, "\n")] = 0;
+        
+        int id, idEmploye, type, status;
+        int jourDebut, moisDebut, anneeDebut, jourFin, moisFin, anneeFin;
+        
+        // Parser jusqu'au motif
+        int n = sscanf(ligne, "%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;",
+                   &id, &idEmploye, &jourDebut, &moisDebut, &anneeDebut,
+                   &jourFin, &moisFin, &anneeFin, &type, &status);
+        
+        if (n == 10) {
+            // Extraire motif entre guillemets
+            char *start = strchr(ligne, '"');
+            char *end = start ? strchr(start + 1, '"') : NULL;
+            char motif[256] = {0};
+            
+            if (start && end) {
+                strncpy(motif, start + 1, end - start - 1);
+            }
+            
+            printf("\nDemande #%d:\n", id);
+            printf("  Employe ID: %d\n", idEmploye);
+            printf("  Du: %02d/%02d/%04d au %02d/%02d/%04d\n", 
+                   jourDebut, moisDebut, anneeDebut, jourFin, moisFin, anneeFin);
+            printf("  Type: %s\n", type == 0 ? "Annuel" : "Maladie");
+            printf("  Statut: %s\n", 
+                   status == 0 ? "En attente" : (status == 1 ? "Approuvé" : "Rejeté"));
+            printf("  Motif: %s\n", motif);
+            trouve = 1;
+        }
+    }
+    
+    fclose(fichier);
+    
+    if(!trouve){
+        printf("Aucune demande de conge trouvee.\n");
+    }
+    printf("--------------------------\n");
+    pause_screen();
 }
 
 void mettreAJourSoldes(){
-    printf("Mise à jour des soldes de congés\n");
+    system("cls");
+    printf("\n--- Mettre a Jour les Soldes ---\n");
+    
+    int idEmploye;
+    printf("Entrez l'ID de l'employe: ");
+    scanf("%d", &idEmploye);
+    
+    FILE *fichier = fopen("soldes.txt", "r");
+    if (fichier == NULL) {
+        printf("Erreur : Impossible d'ouvrir le fichier soldes.txt\n");
+        return;
+    }
+    
+    FILE *fichierTemp = fopen("soldes_temp.txt", "w");
+    if (fichierTemp == NULL) {
+        printf("Erreur : Impossible de créer le fichier temporaire\n");
+        fclose(fichier);
+        return;
+    }
+    
+    char ligne[128];
+    int trouve = 0;
+    
+    while (fgets(ligne, sizeof(ligne), fichier)) {
+        if (ligne[0] == '\n' || ligne[0] == '\0') continue;
+        
+        int id, type, jours;
+        sscanf(ligne, "%d;%d;%d", &id, &type, &jours);
+        
+        if (id == idEmploye) {
+            printf("Solde actuel pour type %d: %d jours\n", type, jours);
+            printf("Nouveaux jours restants (pour type %d): ", type);
+            
+            int nouveauJours;
+            scanf("%d", &nouveauJours);
+            
+            fprintf(fichierTemp, "%d;%d;%d\n", id, type, nouveauJours);
+            trouve = 1;
+        } else {
+            fputs(ligne, fichierTemp);
+        }
+    }
+    
+    fclose(fichier);
+    fclose(fichierTemp);
+    
+    if (trouve) {
+        remove("soldes.txt");
+        rename("soldes_temp.txt", "soldes.txt");
+        printf("Soldes mis a jour avec succes!\n");
+    } else {
+        remove("soldes_temp.txt");
+        printf("Employe #%d introuvable.\n", idEmploye);
+    }
+    
+    printf("----------------------------------\n");
+    pause_screen();
 }

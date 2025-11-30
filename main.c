@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "structs.h"
 #include "interfaces.h"
 #include "file.h"
@@ -53,7 +54,7 @@ void gererSession( int idUtilisateur ,int roleUtilisateur) {
             }
         }
 
-    } while (choixMenu != 0);
+    } while (choixMenu !=5 && choixMenu !=4);
 }
 
 
@@ -77,12 +78,14 @@ int main(){
             int RoleUtilisateur = trouverRoleParId(IdConnexion);
 
             if (RoleUtilisateur != -1) { // -1 signifie "non trouvé"
+                    system("cls");
                     printf("\nConnexion reussie !\n");
                     
                     // On appelle la fonction de session avec l'ID et le rôle
                     gererSession(IdConnexion, RoleUtilisateur);
                     
-                    printf("Déconnexion réussie.\n");
+                    system("cls");
+                    printf("Deconnexion reussie.\n");
                 } else {
                     printf("\nID invalide. Veuillez reessayer.\n");
                 }
