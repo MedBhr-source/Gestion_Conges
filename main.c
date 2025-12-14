@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <conio.h>
+#include <windows.h>
 #include "structs.h"
 #include "interfaces.h"
 #include "file.h"
-//gcc -g main.c file.c interfaces.c -o gestion_conges
+
 Employe *employes = NULL;      
 Conge *conges = NULL;          
 SoldeConge *soldes = NULL;     
@@ -13,91 +15,130 @@ int nbEmployes = 0;
 int nbConges = 0;
 int nbSoldes = 0;
 
-void gererSession( int idUtilisateur ,int roleUtilisateur) {
+// Fonction pour afficher un ecran de connexion stylise
+int afficherEcranConnexion() {
+    system("cls");
+    hideCursor();
+    
+    setColor(9); // Bleu
+    printf("\n\n");
+    printf("    ////////////////////////////////////////////////////\n");
+    printf("    /                                                  /\n");
+    printf("    /          SYSTEME DE GESTION DES CONGES           /\n");
+    printf("    /                                                  /\n");
+    printf("    ////////////////////////////////////////////////////\n");
+    printf("    /                                                  /\n");
+    printf("    /               CONNEXION UTILISATEUR              /\n");
+    printf("    /                                                  /\n");
+    printf("    ////////////////////////////////////////////////////\n");
+    
+    setColor(7); // Normal
+    showCursor();
+    
+    printf("\n\n    Entrez votre ID: ");
+    
+    int id;
+    scanf("%d", &id);
+    return id;
+}
+
+void gererSession(int idUtilisateur, int roleUtilisateur) {
     int choixMenu;
+    int maxChoix = (roleUtilisateur == 2) ? 5 : 4; // Admin a 5 options
+    
     do {
         switch (roleUtilisateur) {
-            case 0: // Employé
-                afficherMenuEmploye();
+            case 0: // Employe
+                choixMenu = afficherMenuEmploye();
                 break;
             case 1: // Manager
-                afficherMenuManager();
+                choixMenu = afficherMenuManager();
                 break;
             case 2: // Admin
-                afficherMenuAdmin();
+                choixMenu = afficherMenuAdmin();
                 break;
         }
-        scanf("%d", &choixMenu);
 
-        if (choixMenu > 0) {
-           printf("Action choisie : %d \n", choixMenu);
-        }
-
-        // On dispatche l'action vers la bonne fonction dans logic.c
-        if (roleUtilisateur == 0) { // Employé
+        // On dispatche l'action vers la bonne fonction
+        if (roleUtilisateur == 0) { // Employe
             switch (choixMenu) {
                 case 1: afficherSoldeUtilisateur(idUtilisateur); break;
                 case 2: faireDemandeConge(idUtilisateur); break;
                 case 3: voirHistoriqueDemandes(idUtilisateur); break;
+                case 4: break; // Deconnexion
             }
         } else if (roleUtilisateur == 1) { // Manager
             switch (choixMenu) {
                 case 1: listerDemandesEnAttente(idUtilisateur); break;
                 case 2: approuverDemande(); break;
                 case 3: rejeterDemande(); break;
+                case 4: break; // Deconnexion
             }
         } else if (roleUtilisateur == 2) { // Admin
             switch (choixMenu) {
                 case 1: gererEmployes(); break;
                 case 2: voirToutesLesDemandes(); break;
                 case 3: mettreAJourSoldes(); break;
-                case 4: afficherStatistiques(); break;
+                case 4: break; // Statistiques (a implementer)
+                case 5: break; // Deconnexion
             }
         }
 
-    } while (choixMenu !=0);
+    } while (choixMenu != maxChoix);
 }
 
 
 int main(){
-
+    // Configuration de la console pour les caracteres speciaux
+    SetConsoleOutputCP(437);
+    
     chargerTousLesEmployes(&employes, &nbEmployes);
     chargerTousLesConges(&conges, &nbConges);
     chargerTousLesSoldes(&soldes, &nbSoldes);   
 
-
     int choix;
     while(1){
-        afficherMenuPrincipal();
-        scanf("%d",&choix);
+        choix = afficherMenuPrincipal();
 
         switch (choix) {
             case 1: {
-            int IdConnexion;
-            printf("donner votre ID :");
-            scanf("%d",&IdConnexion);
-            int RoleUtilisateur = trouverRoleParId(IdConnexion);
+                int IdConnexion = afficherEcranConnexion();
+                int RoleUtilisateur = trouverRoleParId(IdConnexion);
 
-            if (RoleUtilisateur != -1) { // -1 signifie "non trouvé"
+                if (RoleUtilisateur != -1) {
                     system("cls");
-                    printf("\nConnexion reussie !\n");
+                    setColor(10); // Vert
+                    printf("\n    Connexion reussie ! Bienvenue.\n");
+                    setColor(7);
+                    Sleep(1000);
                     
-                    // On appelle la fonction de session avec l'ID et le rôle
                     gererSession(IdConnexion, RoleUtilisateur);
                     
                     system("cls");
-                    printf("Deconnexion reussie.\n");
+                    setColor(11); // Cyan
+                    printf("\n    Deconnexion reussie. A bientot !\n");
+                    setColor(7);
+                    Sleep(1000);
                 } else {
-                    printf("\nID invalide. Veuillez reessayer.\n");
+                    system("cls");
+                    setColor(12); // Rouge
+                    printf("\n    ID invalide. Veuillez reessayer.\n");
+                    setColor(7);
+                    Sleep(1500);
                 }
                 break;
             }
-            case 2 :
-                printf("Au revoir !\n");
+            case 2: {
+                system("cls");
+                setColor(11);
+                printf("\n\n    Au revoir et a bientot !\n\n");
+                setColor(7);
+                Sleep(1000);
                 return 0;
+            }
             default:
-                printf("Choix invalide. Veuillez reessayer.\n");
-       }
+                break;
+        }
     }
 
     return 0;

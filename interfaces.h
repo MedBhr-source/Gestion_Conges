@@ -1,12 +1,24 @@
 #ifndef interface_h
 #define interface_h
 
-void afficherMenuPrincipal();
-void afficherMenuEmploye();
-void afficherMenuManager();
-void afficherMenuAdmin();
+// Fonctions de menu interactif (retournent le choix)
+int afficherMenuPrincipal();
+int afficherMenuEmploye();
+int afficherMenuManager();
+int afficherMenuAdmin();
 
-// Fonctions Employé
+// Fonction de menu generique
+int afficherMenuInteractif(const char* titre, const char* options[], int nbOptions);
+
+// Fonctions utilitaires interface
+void setColor(int color);
+void gotoxy(int x, int y);
+void hideCursor();
+void showCursor();
+void drawBox(int x, int y, int width, int height);
+void pause_screen();
+
+// Fonctions Employe
 void afficherSoldeUtilisateur(int idUtilisateur);
 void faireDemandeConge(int idUtilisateur);
 void voirHistoriqueDemandes(int idUtilisateur);

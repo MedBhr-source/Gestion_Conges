@@ -1,54 +1,197 @@
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
+#include<conio.h>
+#include<windows.h>
 #include"interfaces.h"
 #include"structs.h"
+
+// Codes des touches
+#define KEY_UP 72
+#define KEY_DOWN 80
+#define KEY_ENTER 13
+#define KEY_ESCAPE 27
+
+// Couleurs console
+#define CLR_NORMAL 7
+#define CLR_HIGHLIGHT 112  // Fond blanc, texte noir
+#define CLR_TITLE 11       // Cyan clair
+#define CLR_BORDER 9       // Bleu
 
 // Déclaration de la fonction pause_screen (prototype)
 void pause_screen();
 
-void afficherMenuPrincipal(){
-    printf("\tBIENVENUE\n");
-    printf("--Menu Principal--\n");
-    printf("\n--------------------------\n");
-    printf("1. Se connecter\n");
-    printf("2. Quitter");
-    printf("\n--------------------------\n");
-    printf("OPTION : ");
+// Fonction pour changer la couleur du texte
+void setColor(int color) {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, color);
 }
 
-void afficherMenuEmploye(){
-    printf("\t--Menu Employe--\n");
-    printf("\n--------------------------\n");
-    printf("1. Consulter mon solde de conges\n");
-    printf("2. Faire une nouvelle demande de conge\n");
-    printf("3. Voir l'historique de mes demandes\n\n");
-    printf("0. Se deconnecter");
-    printf("\n--------------------------\n");
-    printf("OPTION : ");
+// Fonction pour positionner le curseur
+void gotoxy(int x, int y) {
+    COORD coord;
+    coord.X = x;
+    coord.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
-void afficherMenuManager(){
-    printf("\t--Menu Manager--\n");
-    printf("\n--------------------------\n");
-    printf("1. Voir les demandes en attente\n");
-    printf("2. Approuver une demande \n");
-    printf("3. Rejeter une demande   \n");
-    printf("0. Se deconnecter\n");
-    printf("\n--------------------------\n");
-    printf("OPTION : ");
+// Fonction pour cacher le curseur
+void hideCursor() {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO cursorInfo;
+    GetConsoleCursorInfo(hConsole, &cursorInfo);
+    cursorInfo.bVisible = FALSE;
+    SetConsoleCursorInfo(hConsole, &cursorInfo);
 }
 
-void afficherMenuAdmin(){
-    printf("\t--Menu Admin--\n");
-    printf("\n--------------------------\n");
-    printf("1. Gerer les employes \n");
-    printf("2. Voir toutes les demandes de conge\n");
-    printf("3. Mettre a jour les soldes de conges\n");
-    printf("4. statistiques des conges\n");
-    printf("0. Se deconnecter\n");
-    printf("\n--------------------------\n");
-    printf("OPTION : ");
+// Fonction pour afficher le curseur
+void showCursor() {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO cursorInfo;
+    GetConsoleCursorInfo(hConsole, &cursorInfo);
+    cursorInfo.bVisible = TRUE;
+    SetConsoleCursorInfo(hConsole, &cursorInfo);
+}
+
+// Fonction pour dessiner une boite avec caracteres ASCII
+void drawBox(int x, int y, int width, int height) {
+    setColor(CLR_BORDER);
+    
+    // Ligne du haut
+    gotoxy(x, y);
+    printf("+");
+    for(int i = 0; i < width - 2; i++) printf("-");
+    printf("+");
+    
+    // Lignes verticales
+    for(int i = 1; i < height - 1; i++) {
+        gotoxy(x, y + i);
+        printf("|");
+        gotoxy(x + width - 1, y + i);
+        printf("|");
+    }
+    
+    // Ligne du bas
+    gotoxy(x, y + height - 1);
+    printf("+");
+    for(int i = 0; i < width - 2; i++) printf("-");
+    printf("+");
+    
+    setColor(CLR_NORMAL);
+}
+
+// Fonction generique pour afficher un menu avec navigation par fleches
+int afficherMenuInteractif(const char* titre, const char* options[], int nbOptions) {
+    system("cls");
+    hideCursor();
+    
+    int selection = 0;
+    int key;
+    int boxWidth = 50;
+    int boxHeight = nbOptions + 6;
+    int startX = 15;
+    int startY = 3;
+    
+    while(1) {
+        // Dessiner la boite
+        drawBox(startX, startY, boxWidth, boxHeight);
+        
+        // Afficher le titre
+        setColor(CLR_TITLE);
+        gotoxy(startX + (boxWidth - strlen(titre)) / 2, startY + 1);
+        printf("%s", titre);
+        
+        // Ligne separatrice
+        setColor(CLR_BORDER);
+        gotoxy(startX, startY + 2);
+        printf("+");
+        for(int i = 0; i < boxWidth - 2; i++) printf("-");
+        printf("+");
+        
+        // Afficher les options
+        for(int i = 0; i < nbOptions; i++) {
+            gotoxy(startX + 3, startY + 4 + i);
+            
+            if(i == selection) {
+                setColor(CLR_HIGHLIGHT);
+                printf(" >> %-40s ", options[i]);
+            } else {
+                setColor(CLR_NORMAL);
+                printf("    %-40s ", options[i]);
+            }
+        }
+        
+        // Instructions
+        setColor(CLR_BORDER);
+        gotoxy(startX + 2, startY + boxHeight);
+        printf("[Fleches: Naviguer] [Entrer: Selectionner]");
+        
+        setColor(CLR_NORMAL);
+        
+        // Lire la touche
+        key = _getch();
+        
+        if(key == 224 || key == 0) { // Touche speciale (fleche)
+            key = _getch();
+            
+            if(key == KEY_UP) {
+                selection--;
+                if(selection < 0) selection = nbOptions - 1;
+            }
+            else if(key == KEY_DOWN) {
+                selection++;
+                if(selection >= nbOptions) selection = 0;
+            }
+        }
+        else if(key == KEY_ENTER) {
+            showCursor();
+            return selection + 1; // Retourne 1-indexed pour compatibilite
+        }
+        else if(key == KEY_ESCAPE) {
+            showCursor();
+            return nbOptions; // Derniere option (souvent deconnexion/quitter)
+        }
+    }
+}
+
+// Fonctions de menu avec navigation par fleches
+int afficherMenuPrincipal(){
+    const char* options[] = {
+        "Se connecter",
+        "Quitter"
+    };
+    return afficherMenuInteractif("BIENVENUE - Menu Principal", options, 2);
+}
+
+int afficherMenuEmploye(){
+    const char* options[] = {
+        "Consulter mon solde de conges",
+        "Faire une nouvelle demande de conge",
+        "Voir l'historique de mes demandes",
+        "Se deconnecter"
+    };
+    return afficherMenuInteractif("Menu Employe", options, 4);
+}
+
+int afficherMenuManager(){
+    const char* options[] = {
+        "Voir les demandes en attente",
+        "Approuver une demande",
+        "Rejeter une demande",
+        "Se deconnecter"
+    };
+    return afficherMenuInteractif("Menu Manager", options, 4);
+}
+
+int afficherMenuAdmin(){
+    const char* options[] = {
+        "Gerer les employes",
+        "Voir toutes les demandes de conge",
+        "Mettre a jour les soldes de conges",
+        "Statistiques des conges",
+        "Se deconnecter"
+    };
+    return afficherMenuInteractif("Menu Administrateur", options, 5);
 }
 
 // Déclarations externes des données globales
@@ -457,22 +600,23 @@ void rejeterDemande(){
 
 // Fonctions Admin
 void gererEmployes(){
-    system("cls");
-    printf("\n--- Gestion des Employes ---\n");
-    printf("1. Ajouter un employe\n");
-    printf("2. Modifier un employe\n");
-    printf("3. Supprimer un employe\n");
-    printf("4. Lister tous les employes\n");
-    printf("5. Retour au menu\n");
-    printf("Choisir une option: ");
+    const char* options[] = {
+        "Ajouter un employe",
+        "Supprimer un employe",
+        "Lister tous les employes",
+        "Retour au menu"
+    };
     
-    int choix;
-    scanf("%d", &choix);
+    int choix = afficherMenuInteractif("Gestion des Employes", options, 4);
+    showCursor();
     
     switch(choix) {
         case 1: {
-            // AJOUTER UN EMPLOYÉ
-            printf("\n--- Ajouter un Employe ---\n");
+            // AJOUTER UN EMPLOYE
+            system("cls");
+            setColor(CLR_TITLE);
+            printf("\n    === AJOUTER UN EMPLOYE ===\n\n");
+            setColor(CLR_NORMAL);
             
             int maxId = 0;
             for(int i = 0; i < nbEmployes; i++) {
@@ -482,25 +626,27 @@ void gererEmployes(){
             Employe nouvelEmploye;
             nouvelEmploye.ID = maxId + 1;
             
-            printf("Nom: ");
+            printf("    Nom: ");
             scanf("%14s", nouvelEmploye.nom);
             
-            printf("Prenom: ");
+            printf("    Prenom: ");
             scanf("%14s", nouvelEmploye.prenom);
             
-            printf("Email: ");
+            printf("    Email: ");
             scanf("%29s", nouvelEmploye.email);
             
-            printf("Departement: ");
+            printf("    Departement: ");
             scanf("%14s", nouvelEmploye.Departement);
             
-            printf("Role (0: Employe, 1: Manager, 2: Admin): ");
+            printf("    Role (0: Employe, 1: Manager, 2: Admin): ");
             scanf("%d", &nouvelEmploye.Role);
             
             // Ajouter à la mémoire
             Employe *temp = realloc(employes, (nbEmployes + 1) * sizeof(Employe));
             if (temp == NULL) {
-                printf("Erreur : Allocation memoire echouee\n");
+                setColor(12);
+                printf("\n    Erreur : Allocation memoire echouee\n");
+                setColor(CLR_NORMAL);
                 break;
             }
             employes = temp;
@@ -510,7 +656,9 @@ void gererEmployes(){
             // Sauvegarder dans le fichier
             FILE *fichier = fopen("employes.txt", "a");
             if (fichier == NULL) {
-                printf("Erreur : Impossible d'ouvrir employes.txt\n");
+                setColor(12);
+                printf("\n    Erreur : Impossible d'ouvrir employes.txt\n");
+                setColor(CLR_NORMAL);
                 break;
             }
             
@@ -519,20 +667,27 @@ void gererEmployes(){
                     nouvelEmploye.email, nouvelEmploye.Departement, nouvelEmploye.Role);
             fclose(fichier);
             
-            printf("Employe #%d ajoute avec succes!\n", nouvelEmploye.ID);
+            setColor(10);
+            printf("\n    Employe #%d ajoute avec succes!\n", nouvelEmploye.ID);
+            setColor(CLR_NORMAL);
             break;
         }
-        case 3: {
-            // SUPPRIMER UN EMPLOYÉ
-            printf("\n--- Supprimer un Employe ---\n");
+        case 2: {
+            // SUPPRIMER UN EMPLOYE
+            system("cls");
+            setColor(CLR_TITLE);
+            printf("\n    === SUPPRIMER UN EMPLOYE ===\n\n");
+            setColor(CLR_NORMAL);
             
             int idSupprimer;
-            printf("Entrez l'ID de l'employe a supprimer: ");
+            printf("    Entrez l'ID de l'employe a supprimer: ");
             scanf("%d", &idSupprimer);
             
             FILE *fichier = fopen("employes.txt", "r");
             if (fichier == NULL) {
-                printf("Erreur : Impossible d'ouvrir employes.txt\n");
+                setColor(12);
+                printf("\n    Erreur : Impossible d'ouvrir employes.txt\n");
+                setColor(CLR_NORMAL);
                 break;
             }
             
@@ -554,7 +709,9 @@ void gererEmployes(){
                 
                 if (id == idSupprimer) {
                     trouve = 1;
-                    printf("Employe #%d supprime!\n", idSupprimer);
+                    setColor(10);
+                    printf("\n    Employe #%d supprime avec succes!\n", idSupprimer);
+                    setColor(CLR_NORMAL);
                 } else {
                     fputs(ligne, fichierTemp);
                 }
@@ -579,26 +736,51 @@ void gererEmployes(){
                 }
             } else {
                 remove("employes_temp.txt");
-                printf("Employe #%d introuvable.\n", idSupprimer);
+                setColor(12);
+                printf("\n    Employe #%d introuvable.\n", idSupprimer);
+                setColor(CLR_NORMAL);
             }
             break;
         }
-        case 4: {
-            printf("\n=== LISTE DES EMPLOYES ===\n");
+        case 3: {
+            system("cls");
+            setColor(CLR_TITLE);
+            printf("\n    +==================================================+\n");
+            printf("    |            LISTE DES EMPLOYES                    |\n");
+            printf("    +==================================================+\n\n");
+            setColor(CLR_NORMAL);
+            
             for(int i = 0; i < nbEmployes; i++) {
-                printf("\nID: %d\n", employes[i].ID);
-                printf("  Nom: %s %s\n", employes[i].nom, employes[i].prenom);
-                printf("  Email: %s\n", employes[i].email);
-                printf("  Departement: %s\n", employes[i].Departement);
-                printf("  Role: %s\n", employes[i].Role == 0 ? "Employe" : (employes[i].Role == 1 ? "Manager" : "Admin"));
+                setColor(CLR_BORDER);
+                printf("    +------------------------------------------+\n");
+                setColor(CLR_NORMAL);
+                printf("    | ");
+                setColor(14); // Jaune
+                printf("ID: %d", employes[i].ID);
+                setColor(CLR_NORMAL);
+                printf("\n    |   Nom: %s %s\n", employes[i].nom, employes[i].prenom);
+                printf("    |   Email: %s\n", employes[i].email);
+                printf("    |   Departement: %s\n", employes[i].Departement);
+                printf("    |   Role: ");
+                if(employes[i].Role == 0) {
+                    setColor(10); printf("Employe");
+                } else if(employes[i].Role == 1) {
+                    setColor(11); printf("Manager");
+                } else {
+                    setColor(12); printf("Admin");
+                }
+                setColor(CLR_NORMAL);
+                printf("\n");
+                setColor(CLR_BORDER);
+                printf("    +------------------------------------------+\n");
+                setColor(CLR_NORMAL);
             }
-            printf("=========================\n");
             break;
         }
-        case 5:
+        case 4:
             return;
         default:
-            printf("Option invalide\n");
+            break;
     }
     pause_screen();
 }
@@ -720,52 +902,4 @@ void mettreAJourSoldes(){
     
     printf("----------------------------------\n");
     pause_screen();
-}
-
-// logic.c (à la fin du fichier)
-
-void afficherStatistiques() {
-    printf("\n--- Statistiques des Demandes de Conge Approuvees ---\n");
-
-    // 1. Créer un tableau pour compter les demandes par mois (initialisé à 0)
-    int demandesParMois[12] = {0}; // Indices 0-11 pour Janvier-Décembre
-
-    // 2. Parcourir toutes les demandes de congé
-    for (int i = 0; i < nbConges; i++) {
-        // On ne considère que les demandes approuvées (status == 1)
-        if (conges[i].status == 1) {
-            int moisDebut = conges[i].dateDebut.mois;
-
-            // Vérifier que le mois est valide (entre 1 et 12)
-            if (moisDebut >= 1 && moisDebut <= 12) {
-                // Incrémenter le compteur pour ce mois
-                // On utilise (moisDebut - 1) car les tableaux sont indexés de 0 à 11
-                demandesParMois[moisDebut - 1]++;
-            }
-        }
-    }
-
-    // 3. Trouver le mois avec le maximum de demandes
-    int maxDemandes = 0;
-    int moisMax = 0; // 0 pour Janvier
-
-    for (int i = 0; i < 12; i++) {
-        if (demandesParMois[i] > maxDemandes) {
-            maxDemandes = demandesParMois[i];
-            moisMax = i;
-        }
-    }
-
-    // 4. Afficher le résultat
-    if (maxDemandes == 0) {
-        printf("Aucune demande de congé approuvée trouvée pour générer des statistiques.\n");
-    } else {
-        // Tableau des noms de mois pour un affichage lisible
-        const char* nomsMois[] = {"Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin",
-                                  "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre"};
-
-        printf("Le mois avec le plus de demandes de conge approuvees est : %s (%d demandes).\n",
-               nomsMois[moisMax], maxDemandes);
-    }
-    printf("----------------------------------------------------\n");
 }
