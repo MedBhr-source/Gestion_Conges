@@ -3,7 +3,7 @@
 #include "structs.h"
 #include "interfaces.h"
 #include "file.h"
-
+//gcc -g main.c file.c interfaces.c -o gestion_conges
 Employe *employes = NULL;      
 Conge *conges = NULL;          
 SoldeConge *soldes = NULL;     
@@ -30,7 +30,7 @@ void gererSession( int idUtilisateur ,int roleUtilisateur) {
         scanf("%d", &choixMenu);
 
         if (choixMenu > 0) {
-           printf("Action choisie : %d (Fonctionnalité à implémenter)\n", choixMenu);
+           printf("Action choisie : %d \n", choixMenu);
         }
 
         // On dispatche l'action vers la bonne fonction dans logic.c
@@ -51,10 +51,11 @@ void gererSession( int idUtilisateur ,int roleUtilisateur) {
                 case 1: gererEmployes(); break;
                 case 2: voirToutesLesDemandes(); break;
                 case 3: mettreAJourSoldes(); break;
+                case 4: afficherStatistiques(); break;
             }
         }
 
-    } while (choixMenu !=5 && choixMenu !=4);
+    } while (choixMenu !=0);
 }
 
 

@@ -14,7 +14,7 @@ void afficherMenuPrincipal(){
     printf("1. Se connecter\n");
     printf("2. Quitter");
     printf("\n--------------------------\n");
-    printf("Entrez votre choix: ");
+    printf("OPTION : ");
 }
 
 void afficherMenuEmploye(){
@@ -23,9 +23,9 @@ void afficherMenuEmploye(){
     printf("1. Consulter mon solde de conges\n");
     printf("2. Faire une nouvelle demande de conge\n");
     printf("3. Voir l'historique de mes demandes\n\n");
-    printf("4. Se deconnecter");
+    printf("0. Se deconnecter");
     printf("\n--------------------------\n");
-    printf("Entrez votre choix:\n");
+    printf("OPTION : ");
 }
 
 void afficherMenuManager(){
@@ -34,9 +34,9 @@ void afficherMenuManager(){
     printf("1. Voir les demandes en attente\n");
     printf("2. Approuver une demande \n");
     printf("3. Rejeter une demande   \n");
-    printf("4. Se deconnecter\n");
+    printf("0. Se deconnecter\n");
     printf("\n--------------------------\n");
-    printf("Entrez votre choix:\n");
+    printf("OPTION : ");
 }
 
 void afficherMenuAdmin(){
@@ -46,9 +46,9 @@ void afficherMenuAdmin(){
     printf("2. Voir toutes les demandes de conge\n");
     printf("3. Mettre a jour les soldes de conges\n");
     printf("4. statistiques des conges\n");
-    printf("5. Se deconnecter\n");
+    printf("0. Se deconnecter\n");
     printf("\n--------------------------\n");
-    printf("Entrez votre choix:\n");
+    printf("OPTION : ");
 }
 
 // Déclarations externes des données globales
@@ -720,4 +720,52 @@ void mettreAJourSoldes(){
     
     printf("----------------------------------\n");
     pause_screen();
+}
+
+// logic.c (à la fin du fichier)
+
+void afficherStatistiques() {
+    printf("\n--- Statistiques des Demandes de Conge Approuvees ---\n");
+
+    // 1. Créer un tableau pour compter les demandes par mois (initialisé à 0)
+    int demandesParMois[12] = {0}; // Indices 0-11 pour Janvier-Décembre
+
+    // 2. Parcourir toutes les demandes de congé
+    for (int i = 0; i < nbConges; i++) {
+        // On ne considère que les demandes approuvées (status == 1)
+        if (conges[i].status == 1) {
+            int moisDebut = conges[i].dateDebut.mois;
+
+            // Vérifier que le mois est valide (entre 1 et 12)
+            if (moisDebut >= 1 && moisDebut <= 12) {
+                // Incrémenter le compteur pour ce mois
+                // On utilise (moisDebut - 1) car les tableaux sont indexés de 0 à 11
+                demandesParMois[moisDebut - 1]++;
+            }
+        }
+    }
+
+    // 3. Trouver le mois avec le maximum de demandes
+    int maxDemandes = 0;
+    int moisMax = 0; // 0 pour Janvier
+
+    for (int i = 0; i < 12; i++) {
+        if (demandesParMois[i] > maxDemandes) {
+            maxDemandes = demandesParMois[i];
+            moisMax = i;
+        }
+    }
+
+    // 4. Afficher le résultat
+    if (maxDemandes == 0) {
+        printf("Aucune demande de congé approuvée trouvée pour générer des statistiques.\n");
+    } else {
+        // Tableau des noms de mois pour un affichage lisible
+        const char* nomsMois[] = {"Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin",
+                                  "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre"};
+
+        printf("Le mois avec le plus de demandes de conge approuvees est : %s (%d demandes).\n",
+               nomsMois[moisMax], maxDemandes);
+    }
+    printf("----------------------------------------------------\n");
 }

@@ -20,5 +20,6 @@ void rejeterDemande();
 void gererEmployes();
 void voirToutesLesDemandes();
 void mettreAJourSoldes();
+void afficherStatistiques();
 
 #endif
